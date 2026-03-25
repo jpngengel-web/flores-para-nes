@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flores Amarillas</title>
+    <style>
+        :root {
+            --bg-oscuro: #1a0f14; /* Fondo exterior oscuro como en el video */
+            --bg-tarjeta: #fcf6ec;
+            --texto-marron: #5a4033;
+            --suelo: #4a3023;
+        }
+
+        body {
+            background-color: var(--bg-oscuro);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* BOTÓN DE INICIO */
+        #btn-inicio {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--texto-marron);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 100;
+            transition: transform 0.2s;
+        }
+        #btn-inicio:active { transform: scale(0.95); }
+        #btn-inicio span { font-size: 24px; }
+
+        /* CONTENEDOR PRINCIPAL (LA TARJETA) */
+        /* Usamos transform scale para que mantenga sus proporciones tipo video sin importar el celular */
+        .tarjeta-wrapper {
+            position: absolute;
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tarjeta {
+            width: 890px;
+            height: 500px;
+            background-color: var(--bg-tarjeta);
+            border-radius: 20px;
+            position: relative;
+            transform: scale(0.45); /* Escala para que quepa en pantalla de celular horizontalmente */
+            transform-origin: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        /* Para pantallas ligeramente más grandes o tablets */
+        @media (min-width: 500px) { .tarjeta { transform: scale(0.6); } }
+        @media (min-width: 800px) { .tarjeta { transform: scale(0.9); } }
+
+        /* LA LÍNEA DEL SUELO */
+        .suelo {
+            position: absolute;
+            bottom: 80px;
+            left: 5%;
+            width: 90%;
+            height: 4px;
+            background-color: var(--suelo);
+            border-radius: 2px;
+        }
+
+        /* ANIMACIÓN DE LA SEMILLA CAYENDO */
+        .semilla {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background-color: var(--suelo);
+            border-radius: 50%;
+            left: 75%;
+            top: 50px;
+            opacity: 0;
+        }
+
+        .semilla.caer {
+            animation: drop 1s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards;
+        }
+
+        @keyframes drop {
+            0% { top: 50px; opacity: 1; }
+            100% { top: calc(100% - 90px); opacity: 1; }
+        }
+
+        /* EL ÁRBOL DIBUJADO EN SVG */
+        .arbol-svg {
+            position: absolute;
+            bottom: 84px; /* Justo arriba del suelo */
+            left: calc(75% - 150px); /* Centrado con la semilla */
+            width: 300px;
+            height: 350px;
+        }
+
+        .rama {
+            fill: none;
+            stroke: var(--suelo);
+            stroke-width: 8;
+            stroke-linecap: round;
+            stroke-dasharray: 400;
+            stroke-dashoffset: 400; /* Oculto inicialmente */
+        }
+
+        /* Animaciones de crecimiento de las ramas */
+        .crecer .tronco { animation: draw 1s forwards ease-out; }
+        .crecer .r1 { animation: draw 0.8s forwards ease-out 0.5s; }
+        .crecer .r2 { animation: draw 0.8s forwards ease-out 0.7s; }
+        .crecer .r3 { animation: draw 0.8s forwards ease-out 0.9s; }
+        .crecer .r4 { animation: draw 0.8s forwards ease-out 1.1s; }
+        .crecer .r5 { animation: draw 0.8s forwards ease-out 1.3s; }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* CORAZÓN DE FLORES */
+        .corazon-contenedor {
+            position: absolute;
+            bottom: 180px;
+            left: calc(75% - 175px);
+            width: 350px;
+            height: 300px;
+            z-index: 10;
+        }
+
+        .flor {
+            position: absolute;
+            font-size: 26px;
+            opacity: 0;
+            transform: scale(0);
+            animation: pop 0.5s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* TEXTO EFECTO MÁQUINA DE ESCRIBIR */
+        .texto-container {
+            position: absolute;
+            top: 35px;
+            left: 50px;
+            width: 450px;
+            color: var(--texto-marron);
+            font-size: 22px;
+            line-height: 1.8;
+            white-space: pre-wrap; /* Respeta los saltos de línea */
+        }
+
+        /* CONTADOR TIPO RULETA */
+        .contador-container {
+            position: absolute;
+            bottom: 80px;
+            left: 75px;
+            color: var(--texto-marron);
+            font-size: 18px;
+            opacity: 0;
+            transition: opacity 1s;
+        }
+
+        .numeros-destacados {
+            font-size: 28px;
+            font-weight: bold;
+            color: #d4a017;
+            margin-right: 5px;
+        }
+        
+        /* Pétalos cayendo */
+        .petalo-cae {
+            position: absolute;
+            font-size: 20px;
+            top: -50px;
+            animation: caer-petalo linear forwards;
+            z-index: 20;
+        }
+
+        @keyframes caer-petalo {
+            to { transform: translateY(600px) rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="btn-inicio" onclick="iniciarAnimacion()">
+        <span>🌻</span> Flores Para Ti
+    </div>
+
+    <div class="tarjeta-wrapper" id="escena">
+        <div class="tarjeta">
+            
+            <div class="texto-container" id="texto-escrito"></div>
+            
+            <div class="contador-container" id="contador-div">
+              <br>
+                Mi amor por ti comenzó hace...<br>
+                <span class="numeros-destacados" id="dias">000</span> días 
+                <span class="numeros-destacados" id="horas">00</span> horas 
+                <span class="numeros-destacados" id="minutos">00</span> minutos 
+                <span class="numeros-destacados" id="segundos">00</span> segundos
+            </div>
+
+            <div class="semilla" id="semilla"></div>
+            
+            <svg class="arbol-svg" id="arbol" viewBox="0 0 300 350">
+                <path class="rama tronco" d="M150,350 Q150,200 150,100" />
+                <path class="rama r1" d="M150,250 Q100,200 60,150" />
+                <path class="rama r2" d="M150,220 Q200,180 240,130" />
+                <path class="rama r3" d="M150,180 Q110,140 80,90" />
+                <path class="rama r4" d="M150,150 Q190,110 220,70" />
+                <path class="rama r5" d="M150,100 Q150,60 150,30" />
+            </svg>
+
+            <div class="corazon-contenedor" id="corazon"></div>
+            
+            <div class="suelo"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. CONFIGURACIÓN DEL MENSAJE Y FECHA
+        const mensajeFinal = "Flores Amarillas para mi pastelito 🧁, el amor de mi vida:\n\nSi pudiera elegir un lugar seguro, sería a tu lado.\nCuanto más tiempo estoy contigo más te amo.\nMucho éxito en sus exámenes ❤️.\n\n\n— I Love You! ✨";
+        
+        // Pon aquí la fecha de aniversario real
+        const fechaAniversario = new Date('2025-09-20T00:00:00'); 
+
+        function iniciarAnimacion() {
+            document.getElementById('btn-inicio').style.display = 'none';
+            document.getElementById('escena').style.display = 'flex';
+
+            const semilla = document.getElementById('semilla');
+            const arbol = document.getElementById('arbol');
+            
+            // 1. Cae la semilla
+            semilla.classList.add('caer');
+
+            // 2. Crece el árbol (1 seg después, cuando la semilla toca el suelo)
+            setTimeout(() => {
+                semilla.style.display = 'none';
+                arbol.classList.add('crecer');
+            }, 1000);
+
+            // 3. Florece el corazón (2.5 segs después, cuando las ramas terminan)
+            setTimeout(() => {
+                generarFloresCorazon();
+            }, 2500);
+
+            // 4. Empieza a escribir el texto (4 segs después)
+            setTimeout(() => {
+                escribirTexto();
+                iniciarLluviaPetalos();
+            }, 4000);
+        }
+
+        // Función para generar flores con la forma matemática de un corazón
+        function generarFloresCorazon() {
+            const contenedor = document.getElementById('corazon');
+            const totalFlores = 1200;
+            
+            for (let i = 0; i < totalFlores; i++) {
+                setTimeout(() => {
+                    const flor = document.createElement('div');
+                    flor.classList.add('flor');
+                    flor.innerText = Math.random() > 0.3 ? '🌻' : '🌼';
+                    
+                    // Matemáticas para distribuir en forma de corazón
+                    const t = Math.random() * Math.PI * 2;
+                    const r = Math.sqrt(Math.random()); 
+                    
+                    // Fórmula del corazón escalada
+                    const x = r * 16 * Math.pow(Math.sin(t), 3);
+                    const y = -r * (13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                    
+                    // Centrar y escalar posiciones
+                    const centerX = 175;
+                    const centerY = 150;
+                    const scale = 10;
+                    
+                    flor.style.left = (centerX + x * scale - 13) + 'px'; // -13 para centrar el emoji
+                    flor.style.top = (centerY + y * scale - 13) + 'px';
+                    
+                    // Pequeña variación de tamaño y rotación
+                    flor.style.transform = `rotate(${Math.random() * 40 - 20}deg)`;
+                    flor.style.fontSize = (Math.random() * 10 + 20) + 'px';
+                    
+                    contenedor.appendChild(flor);
+                }, i * 10); // Aparecen una por una rápidamente
+            }
+        }
+
+        // Función para el efecto de máquina de escribir
+        function escribirTexto() {
+            const contenedor = document.getElementById('texto-escrito');
+            let index = 0;
+            
+            const intervalo = setInterval(() => {
+                if (index < mensajeFinal.length) {
+                    contenedor.innerHTML += mensajeFinal.charAt(index);
+                    index++;
+                } else {
+                    clearInterval(intervalo);
+                    // 5. Mostrar y arrancar el contador veloz cuando termina el texto
+                    document.getElementById('contador-div').style.opacity = '1';
+                    animarContadorLoco();
+                }
+            }, 50); // Velocidad de escritura
+        }
+
+        // Función que replica el efecto de números contando súper rápido hasta la fecha actual
+        function animarContadorLoco() {
+            const ahora = new Date();
+            const diff = ahora - fechaAniversario;
+            
+            const diasReales = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const horasReales = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const minutosReales = Math.floor((diff / (1000 * 60)) % 60);
+            const segundosReales = Math.floor((diff / 1000) % 60);
+
+            let d = diasReales - 5; // Empieza a contar desde 5 días antes para el drama
+            let h = 0;
+            
+            const timerObj = setInterval(() => {
+                h += 3;
+                if (h >= 24) { h = 0; d++; }
+                
+                document.getElementById('dias').innerText = d;
+                document.getElementById('horas').innerText = h < 10 ? '0'+h : h;
+                document.getElementById('minutos').innerText = Math.floor(Math.random() * 60);
+                document.getElementById('segundos').innerText = Math.floor(Math.random() * 60);
+
+                if (d >= diasReales && h >= horasReales) {
+                    clearInterval(timerObj);
+                    iniciarContadorReal(); // Pasa al contador normal
+                }
+            }, 30);
+        }
+
+        // Contador normal de segundo a segundo
+        function iniciarContadorReal() {
+            setInterval(() => {
+                const ahora = new Date();
+                const diff = ahora - fechaAniversario;
+                
+                const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const m = Math.floor((diff / (1000 * 60)) % 60);
+                const s = Math.floor((diff / 1000) % 60);
+
+                document.getElementById('dias').innerText = d;
+                document.getElementById('horas').innerText = h < 10 ? '0'+h : h;
+                document.getElementById('minutos').innerText = m < 10 ? '0'+m : m;
+                document.getElementById('segundos').innerText = s < 10 ? '0'+s : s;
+            }, 1000);
+        }
+
+        function iniciarLluviaPetalos() {
+            setInterval(() => {
+                const petalo = document.createElement('div');
+                petalo.classList.add('petalo-cae');
+                petalo.innerText = '🌻';
+                petalo.style.left = Math.random() * 100 + '%';
+                petalo.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                document.querySelector('.tarjeta').appendChild(petalo);
+                
+                setTimeout(() => petalo.remove(), 6000);
+            }, 800);
+        }
+    </script>
+</body>
+</html>
